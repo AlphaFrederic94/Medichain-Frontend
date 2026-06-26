@@ -12,8 +12,21 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Search, Users, UserRound, Calendar, ArrowRight } from 'lucide-react';
 import { useProviderRecords } from '@/lib/hooks/use-records';
+import { usePatientByDid } from '@/lib/hooks/use-patient';
 import { useAppStore } from '@/lib/store';
 import type { Encounter } from '@/lib/api';
+
+function PatientNameCell({ patientDid }: { patientDid: string }) {
+  const { data: profile, isLoading } = usePatientByDid(patientDid);
+  if (isLoading) return <span className="text-xs text-muted-foreground animate-pulse">Loading name...</span>;
+  if (!profile) return <span className="font-mono text-xs text-muted-foreground">{patientDid}</span>;
+  return (
+    <div className="flex flex-col text-left">
+      <span className="font-medium text-sm text-foreground">{profile.firstName} {profile.lastName}</span>
+      <span className="font-mono text-[10px] text-muted-foreground truncate max-w-[180px]">{patientDid}</span>
+    </div>
+  );
+}
 
 interface RosterEntry {
   patientDid: string;
@@ -50,8 +63,7 @@ function buildPatientRoster(encounters: Encounter[]): RosterEntry[] {
 type RosterRow = RosterEntry & Record<string, unknown>;
 
 export function DoctorMyPatients() {
-  const userDid = useAppStore((s) => s.userDid);
-  const navigate = useAppStore((s) => s.navigate);
+  const { userDid, navigate, setActivePatientDid } = useAppStore();
   const { data: records, isLoading } = useProviderRecords(userDid);
   const [search, setSearch] = useState('');
 
@@ -80,9 +92,7 @@ export function DoctorMyPatients() {
               {row.patientDid.slice(-2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <span className="font-mono text-xs text-muted-foreground truncate max-w-[220px]">
-            {row.patientDid}
-          </span>
+          <PatientNameCell patientDid={row.patientDid} />
         </div>
       ),
     },
@@ -118,12 +128,15 @@ export function DoctorMyPatients() {
     },
     {
       header: '',
-      accessor: () => (
+      accessor: (row) => (
         <Button
           variant="outline"
           size="sm"
           className="h-7 text-xs gap-1"
-          onClick={() => navigate('doctor-patient-search')}
+          onClick={() => {
+            setActivePatientDid(row.patientDid);
+            navigate('doctor-patient-search');
+          }}
         >
           View <ArrowRight className="size-3" />
         </Button>

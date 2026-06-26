@@ -22,7 +22,7 @@ import type { Staff } from '@/lib/api';
 function ProfileTab() {
   const { data: profile, isLoading } = useMyProviderProfile();
   const { data: specialties } = useSpecialties();
-  const { mutate: updateProfile, isPending: saving, isSuccess } = useUpdateMyProviderProfile();
+  const { mutate: updateProfile, isPending: saving, isSuccess, error } = useUpdateMyProviderProfile();
 
   const [form, setForm] = useState<Partial<Staff>>({});
   const [dirty, setDirty] = useState(false);
@@ -34,6 +34,12 @@ function ProfileTab() {
   const set = (key: keyof Staff, value: string) => {
     setForm((f) => ({ ...f, [key]: value }));
     setDirty(true);
+  };
+
+  const saveProfile = () => {
+    updateProfile(form, {
+      onSuccess: () => setDirty(false),
+    });
   };
 
   if (isLoading) {
@@ -135,7 +141,7 @@ function ProfileTab() {
       <div className="flex items-center gap-3">
         <Button
           disabled={!dirty || saving}
-          onClick={() => { updateProfile(form); setDirty(false); }}
+          onClick={saveProfile}
           className="gap-2"
         >
           {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
@@ -146,6 +152,7 @@ function ProfileTab() {
             <CheckCircle2 className="size-4" /> Saved successfully
           </span>
         )}
+        {error && <span className="text-sm text-destructive">{(error as Error).message}</span>}
       </div>
     </div>
   );

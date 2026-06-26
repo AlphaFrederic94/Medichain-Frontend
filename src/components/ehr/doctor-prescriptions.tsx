@@ -14,8 +14,21 @@ import {
   Pill, Search, CheckCircle2, Clock, Package, Loader2,
 } from 'lucide-react';
 import { useProviderRecords, useDispensePrescription } from '@/lib/hooks/use-records';
+import { usePatientByDid } from '@/lib/hooks/use-patient';
 import { useAppStore } from '@/lib/store';
 import type { Prescription } from '@/lib/api';
+
+function PatientNameCell({ patientDid }: { patientDid: string }) {
+  const { data: profile, isLoading } = usePatientByDid(patientDid);
+  if (isLoading) return <span className="text-xs text-muted-foreground animate-pulse">Loading name...</span>;
+  if (!profile) return <span className="font-mono text-xs text-muted-foreground">{patientDid}</span>;
+  return (
+    <div className="flex flex-col text-left">
+      <span className="font-medium text-sm text-foreground">{profile.firstName} {profile.lastName}</span>
+      <span className="font-mono text-[10px] text-muted-foreground truncate max-w-[180px]">{patientDid}</span>
+    </div>
+  );
+}
 
 type PrescriptionRow = Prescription & Record<string, unknown>;
 
@@ -60,11 +73,9 @@ export function DoctorPrescriptions() {
       ),
     },
     {
-      header: 'Patient DID',
+      header: 'Patient',
       accessor: (row) => (
-        <span className="font-mono text-xs text-muted-foreground truncate max-w-[180px] inline-block">
-          {(row as Prescription).patientDid}
-        </span>
+        <PatientNameCell patientDid={(row as Prescription).patientDid} />
       ),
     },
     {

@@ -13,11 +13,25 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  ShieldCheck, Plus, Clock, CheckCircle2, AlertCircle, Lock,
+  ShieldCheck, Plus, Clock, CheckCircle2, AlertCircle, Lock, Ban, UserCheck, Trash2, Loader2,
 } from 'lucide-react';
-import { usePatientRecords } from '@/lib/hooks/use-records';
+import { usePatientRecords, usePatientConsentHistory, useGrantConsent, useRevokeConsent, type ConsentHistoryItem } from '@/lib/hooks/use-records';
+import { useStaffByDid } from '@/lib/hooks/use-provider';
 import { useAppStore } from '@/lib/store';
 import type { Encounter } from '@/lib/api';
+
+function ProviderNameCell({ providerDid }: { providerDid: string }) {
+  const { data: profile, isLoading } = useStaffByDid(providerDid);
+  if (isLoading) return <span className="text-xs text-muted-foreground animate-pulse">Loading name...</span>;
+  if (!profile) return <span className="font-mono text-xs text-muted-foreground">{providerDid}</span>;
+  const prefix = profile.role === 'DOCTOR' ? 'Dr. ' : '';
+  return (
+    <div className="flex flex-col text-left">
+      <span className="font-medium text-sm text-foreground">{prefix}{profile.firstName} {profile.lastName}</span>
+      <span className="font-mono text-[10px] text-muted-foreground truncate max-w-[180px]">{providerDid}</span>
+    </div>
+  );
+}
 
 // Derive unique provider access entries from encounters
 function buildAccessLog(encounters: Encounter[]) {
@@ -41,13 +55,21 @@ function buildAccessLog(encounters: Encounter[]) {
 
 export function ConsentManagement() {
   const userDid = useAppStore((s) => s.userDid);
-  const { data: records, isLoading } = usePatientRecords(userDid);
+  const { data: records, isLoading: recordsLoading } = usePatientRecords(userDid);
+  const { data: consentHistory, isLoading: consentsLoading } = usePatientConsentHistory(userDid);
+  const { mutateAsync: grantConsent } = useGrantConsent();
+  const { mutateAsync: revokeConsent, isPending: revoking } = useRevokeConsent();
 
   const [grantDialogOpen, setGrantDialogOpen] = useState(false);
   const [grantForm, setGrantForm] = useState({ providerDid: '', accessTypes: [] as string[], duration: '24h', purpose: '' });
+  const [submitting, setSubmitting] = useState(false);
 
   const encounters = records?.encounters ?? [];
   const accessLog = buildAccessLog(encounters);
+
+  const activeConsents = (consentHistory ?? []).filter(
+    (c) => c.status === 'ACTIVE' && new Date(c.expiresAt) > new Date()
+  );
 
   const toggleAccessType = (type: string) => {
     setGrantForm((prev) => ({
@@ -58,13 +80,96 @@ export function ConsentManagement() {
     }));
   };
 
+  const handleGrantConsent = async () => {
+    if (!grantForm.providerDid || grantForm.accessTypes.length === 0) return;
+    setSubmitting(true);
+    try {
+      const hours = parseInt(grantForm.duration) || 24;
+      const expiresAt = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
+      await grantConsent({
+        providerDid: grantForm.providerDid,
+        scopes: grantForm.accessTypes.map((t) => t.toUpperCase()),
+        expiresAt,
+        purpose: grantForm.purpose || 'Clinical care',
+      });
+      setGrantDialogOpen(false);
+      setGrantForm({ providerDid: '', accessTypes: [], duration: '24h', purpose: '' });
+    } catch (err) {
+      console.error(err);
+      alert((err as Error).message || 'Failed to grant consent.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleRevokeConsent = async (providerDid: string) => {
+    if (!confirm('Are you sure you want to revoke consent for this provider immediately?')) return;
+    try {
+      await revokeConsent({ providerDid });
+    } catch (err) {
+      console.error(err);
+      alert((err as Error).message || 'Failed to revoke consent.');
+    }
+  };
+
+  const consentColumns: DataTableColumn<ConsentHistoryItem & Record<string, unknown>>[] = [
+    {
+      header: 'Provider',
+      accessor: (row) => <ProviderNameCell providerDid={(row as ConsentHistoryItem).providerDid} />,
+    },
+    {
+      header: 'Authorized Scopes',
+      accessor: (row) => (
+        <div className="flex flex-wrap gap-1">
+          {(row as ConsentHistoryItem).scopes.map((s) => (
+            <Badge key={s} variant="outline" className="text-[10px] uppercase font-mono">
+              {s}
+            </Badge>
+          ))}
+        </div>
+      ),
+    },
+    {
+      header: 'Expires At',
+      accessor: (row) => (
+        <span className="text-xs text-muted-foreground">
+          {new Date((row as ConsentHistoryItem).expiresAt).toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+          })}
+        </span>
+      ),
+      headerClassName: 'w-[160px]',
+    },
+    {
+      header: 'Purpose / Details',
+      accessor: (row) => <span className="text-xs text-muted-foreground italic">{(row as ConsentHistoryItem).purpose}</span>,
+    },
+    {
+      header: '',
+      accessor: (row) => (
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-7 text-xs border-destructive text-destructive hover:bg-destructive/10"
+          onClick={() => handleRevokeConsent((row as ConsentHistoryItem).providerDid)}
+          disabled={revoking}
+        >
+          <Ban className="size-3 mr-1" /> Revoke
+        </Button>
+      ),
+      headerClassName: 'w-[100px]',
+      cellClassName: 'text-right',
+    },
+  ];
+
   const tableColumns: DataTableColumn<(typeof accessLog)[0] & Record<string, unknown>>[] = [
     {
-      header: 'Provider DID',
+      header: 'Provider',
       accessor: (row) => (
-        <span className="font-mono text-xs text-muted-foreground truncate max-w-[220px] inline-block">
-          {(row as (typeof accessLog)[0]).providerDid}
-        </span>
+        <ProviderNameCell providerDid={(row as (typeof accessLog)[0]).providerDid} />
       ),
     },
     {
@@ -96,6 +201,8 @@ export function ConsentManagement() {
       headerClassName: 'w-[120px]',
     },
   ];
+
+  const isLoading = recordsLoading || consentsLoading;
 
   if (isLoading) {
     return (
@@ -153,6 +260,36 @@ export function ConsentManagement() {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      {/* On-Chain Active Consent Policies */}
+      <div className="mb-8 animate-fade-in">
+        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <UserCheck className="w-5 h-5 text-primary" />
+          On-Chain Active Consent Policies
+        </h2>
+        {activeConsents.length > 0 ? (
+          <Card className="py-0">
+            <CardContent className="p-0">
+              <DataTable
+                columns={consentColumns}
+                data={activeConsents as (ConsentHistoryItem & Record<string, unknown>)[]}
+                rowKey="id"
+                maxHeight="max-h-[320px]"
+              />
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="py-0">
+            <CardContent className="py-12 text-center border border-dashed rounded-lg bg-background">
+              <Lock className="w-10 h-10 mx-auto text-muted-foreground mb-3 opacity-60" />
+              <p className="text-sm font-medium text-foreground">No active blockchain consent tokens found</p>
+              <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+                Issue a signed consent token above to allow a provider to view your records.
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Provider Access Log */}
@@ -236,7 +373,7 @@ export function ConsentManagement() {
                     type="button"
                     onClick={() => toggleAccessType(type)}
                     className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-                      grantForm.accessTypes.includes(type)
+                       grantForm.accessTypes.includes(type)
                         ? 'bg-primary/10 text-primary border-primary/30'
                         : 'bg-muted text-muted-foreground border-border hover:border-primary/20'
                     }`}
@@ -276,12 +413,19 @@ export function ConsentManagement() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setGrantDialogOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setGrantDialogOpen(false)} disabled={submitting}>Cancel</Button>
             <Button
-              disabled={!grantForm.providerDid || grantForm.accessTypes.length === 0}
-              onClick={() => setGrantDialogOpen(false)}
+              disabled={!grantForm.providerDid || grantForm.accessTypes.length === 0 || submitting}
+              onClick={handleGrantConsent}
             >
-              Issue Consent Token
+              {submitting ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                  Issuing...
+                </>
+              ) : (
+                'Issue Consent Token'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

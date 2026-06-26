@@ -34,8 +34,7 @@ const PIE_COLORS = [
 
 /* ─────────────────────────── Component ──────────────────────────────────── */
 export function DoctorDashboard() {
-  const navigate = useAppStore((s) => s.navigate);
-  const userDid = useAppStore((s) => s.userDid);
+  const { navigate, userDid, setActivePatientDid } = useAppStore();
 
   const { data: providerProfile, isLoading: profileLoading } = useMyProviderProfile();
   const { data: records } = useProviderRecords(userDid);
@@ -104,7 +103,10 @@ export function DoctorDashboard() {
             variant="outline"
             size="sm"
             className="h-7 text-xs"
-            onClick={() => navigate('doctor-patient-search')}
+            onClick={() => {
+              setActivePatientDid((row as PatientSearchResult).userDid);
+              navigate('doctor-patient-search');
+            }}
           >
             Open
           </Button>
@@ -113,7 +115,7 @@ export function DoctorDashboard() {
         cellClassName: 'text-right',
       },
     ],
-    [navigate]
+    [navigate, setActivePatientDid]
   );
 
   /* ──────────── Custom tooltip for bar chart ──────────── */

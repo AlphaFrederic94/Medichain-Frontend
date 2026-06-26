@@ -234,3 +234,51 @@ export function useUploadDocument() {
     },
   });
 }
+
+// ── Blockchain Consent Hooks ─────────────────────────────────────
+export interface ConsentHistoryItem {
+  id: string;
+  patientDid: string;
+  providerDid: string;
+  scopes: string[];
+  expiresAt: string;
+  purpose: string;
+  status: 'ACTIVE' | 'REVOKED' | 'EXPIRED';
+  txId?: string;
+  createdAt: string;
+}
+
+export function usePatientConsentHistory(patientDid: string | null) {
+  const isAuthenticated = useAppStore((s) => s.isAuthenticated);
+  return useQuery({
+    queryKey: ['blockchain', 'consents', patientDid],
+    queryFn: () => api.get<ConsentHistoryItem[]>(`/blockchain/consents/history/${patientDid}`),
+    enabled: isAuthenticated && !!patientDid,
+  });
+}
+
+export function useGrantConsent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      providerDid: string;
+      scopes: string[];
+      expiresAt: string;
+      purpose: string;
+    }) => api.post<{ success: boolean; data: any }>('/blockchain/consents', data),
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ['blockchain', 'consents'] });
+    },
+  });
+}
+
+export function useRevokeConsent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { providerDid: string }) =>
+      api.delete<{ success: boolean; data: any }>('/blockchain/consents', data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['blockchain', 'consents'] });
+    },
+  });
+}

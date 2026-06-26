@@ -55,6 +55,10 @@ interface AppState {
   sidebarCollapsed: boolean;
   mobileSidebarOpen: boolean;
 
+  // Patient Context
+  activePatientDid: string | null;
+  setActivePatientDid: (did: string | null) => void;
+
   // Theme
   darkMode: boolean;
 
@@ -78,6 +82,7 @@ export const useAppStore = create<AppState>((set) => ({
   currentPage: 'login',
   sidebarCollapsed: false,
   mobileSidebarOpen: false,
+  activePatientDid: null,
   darkMode: false,
 
   setAuth: (user, accessToken, refreshToken) => {
@@ -131,10 +136,12 @@ export const useAppStore = create<AppState>((set) => ({
       currentPage: 'login',
       sidebarCollapsed: false,
       mobileSidebarOpen: false,
+      activePatientDid: null,
     });
   },
 
   navigate: (page) => set({ currentPage: page, mobileSidebarOpen: false }),
+  setActivePatientDid: (did) => set({ activePatientDid: did }),
 
   toggleSidebar: () =>
     set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),

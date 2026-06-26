@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PageContainer } from '@/components/ehr/page-container';
 import { ChainBadge } from '@/components/ehr/chain-badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useSearchPatients, usePatientByDid } from '@/lib/hooks/use-patient';
 import { usePatientRecords } from '@/lib/hooks/use-records';
+import { useAppStore } from '@/lib/store';
 import type { PatientSearchResult } from '@/lib/api';
 
 function PatientDetail({ patient }: { patient: PatientSearchResult }) {
@@ -158,6 +159,28 @@ export function DoctorPatientSearch() {
   const [query, setQuery] = useState('');
   const [queryType, setQueryType] = useState<'did' | 'name' | 'phone'>('did');
   const [selectedPatient, setSelectedPatient] = useState<PatientSearchResult | null>(null);
+
+  const activePatientDid = useAppStore((s) => s.activePatientDid);
+  const setActivePatientDid = useAppStore((s) => s.setActivePatientDid);
+
+  useEffect(() => {
+    if (activePatientDid) {
+      setQuery(activePatientDid);
+      setQueryType('did');
+      setSelectedPatient(null);
+      search(
+        { did: activePatientDid },
+        {
+          onSuccess: (res) => {
+            if (res && res.length === 1) {
+              setSelectedPatient(res[0]);
+            }
+          },
+        }
+      );
+      setActivePatientDid(null);
+    }
+  }, [activePatientDid, search, setActivePatientDid]);
 
   const handleSearch = () => {
     if (!query.trim()) return;

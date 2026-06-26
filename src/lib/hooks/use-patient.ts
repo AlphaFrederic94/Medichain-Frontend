@@ -135,3 +135,37 @@ export function useSearchPatients() {
       api.post<PatientSearchResult[]>('/patients/search', query),
   });
 }
+
+// ── Provider actions: Register and Update Patient ────────────────
+export function useRegisterPatientByProvider() {
+  return useMutation({
+    mutationFn: async (payload: {
+      email: string;
+      firstName: string;
+      lastName: string;
+      phone: string;
+    }) => {
+      const res = await api.post<{ success: boolean; data: { user: { did: string } } }>('/auth/register/patient', {
+        email: payload.email,
+        password: 'TemporaryPassword123!',
+        firstName: payload.firstName,
+        lastName: payload.lastName,
+        countryCode: 'CMR',
+      });
+      return res.data;
+    },
+  });
+}
+
+export function useUpdatePatientProfileByProvider() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ did, data }: { did: string; data: Partial<PatientProfile> }) => {
+      return api.put<PatientProfile>(`/patients/${did}`, data);
+    },
+    onSuccess: (_, variables) => {
+      qc.invalidateQueries({ queryKey: ['patient', variables.did] });
+      qc.invalidateQueries({ queryKey: ['patient', 'me'] });
+    },
+  });
+}

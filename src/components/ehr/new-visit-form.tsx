@@ -16,7 +16,7 @@ import {
   Thermometer, Heart, Activity, Scale, Droplets, Wind, Gauge,
   Plus, Trash2, ChevronRight, ChevronLeft, Link2, Stethoscope,
 } from 'lucide-react';
-import { useSearchPatients } from '@/lib/hooks/use-patient';
+import { useSearchPatients, useRegisterPatientByProvider, useUpdatePatientProfileByProvider } from '@/lib/hooks/use-patient';
 import { useCreateVisit, useAddDiagnosis, useCreatePrescription, useRecordVitals } from '@/lib/hooks/use-records';
 import { useAppStore } from '@/lib/store';
 import type { PatientSearchResult } from '@/lib/api';
@@ -38,12 +38,17 @@ interface DrugEntry {
 
 export function NewVisitForm() {
   const userDid = useAppStore((s) => s.userDid);
+  const activePatientDid = useAppStore((s) => s.activePatientDid);
+  const setActivePatientDid = useAppStore((s) => s.setActivePatientDid);
 
   const { mutate: searchPatientsApi, isPending: searchingPatient } = useSearchPatients();
   const { mutateAsync: createVisit } = useCreateVisit();
   const { mutateAsync: submitDiagnosis } = useAddDiagnosis();
   const { mutateAsync: createPrescription } = useCreatePrescription();
   const { mutateAsync: recordVitals } = useRecordVitals();
+  
+  const { mutateAsync: registerPatient } = useRegisterPatientByProvider();
+  const { mutateAsync: updatePatientProfile } = useUpdatePatientProfileByProvider();
 
   const [step, setStep] = useState(0);
   const [patientDid, setPatientDid] = useState('');
@@ -62,6 +67,100 @@ export function NewVisitForm() {
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [encounterId, setEncounterId] = useState('');
+
+  // Local state for registering a new patient
+  const [showRegisterForm, setShowRegisterForm] = useState(false);
+  const [registering, setRegistering] = useState(false);
+  const [newPatient, setNewPatient] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    dateOfBirth: '',
+    gender: 'MALE' as 'MALE' | 'FEMALE' | 'OTHER',
+    bloodGroup: '',
+    city: '',
+    address: '',
+  });
+
+  // Auto-populate patient from activePatientDid context
+  useState(() => {
+    if (activePatientDid) {
+      setPatientDid(activePatientDid);
+      searchPatientsApi(
+        { did: activePatientDid },
+        {
+          onSuccess: (results) => {
+            if (results && results.length > 0) {
+              setPatientFound(results[0]);
+              setConsentStatus('granted');
+            }
+          },
+        }
+      );
+      // Clear after loading to avoid sticking context on next route
+      setActivePatientDid(null);
+    }
+  });
+
+  const handleRegisterPatient = async () => {
+    if (!newPatient.firstName || !newPatient.lastName || !newPatient.email || !newPatient.phone) {
+      setSubmitError('Please fill in all required fields (First/Last name, Email, Phone).');
+      return;
+    }
+    setRegistering(true);
+    setSubmitError('');
+    try {
+      // 1. Create auth user (DID)
+      const authRes = await registerPatient({
+        email: newPatient.email,
+        firstName: newPatient.firstName,
+        lastName: newPatient.lastName,
+        phone: newPatient.phone,
+      });
+
+      const did = authRes.data.user.did;
+
+      // 2. Initialize and write their profile details in patient-service
+      await updatePatientProfile({
+        did,
+        data: {
+          dateOfBirth: newPatient.dateOfBirth || undefined,
+          gender: newPatient.gender,
+          phone: newPatient.phone,
+          bloodGroup: newPatient.bloodGroup || undefined,
+          city: newPatient.city || undefined,
+          address: newPatient.address || undefined,
+        },
+      });
+
+      // 3. Set the newly created patient as the loaded patient
+      const patientResult: PatientSearchResult = {
+        userDid: did,
+        firstName: newPatient.firstName,
+        lastName: newPatient.lastName,
+        phone: newPatient.phone,
+        gender: newPatient.gender,
+        bloodGroup: newPatient.bloodGroup || null,
+        city: newPatient.city || null,
+        address: newPatient.address || null,
+        dateOfBirth: newPatient.dateOfBirth || null,
+        nationalId: null,
+        languagePref: null,
+      };
+
+      setPatientFound(patientResult);
+      setPatientDid(did);
+      setConsentStatus('granted');
+      setShowRegisterForm(false);
+      // Auto-advance to Step 2
+      setStep(1);
+    } catch (err) {
+      setSubmitError((err as Error).message || 'Failed to register new patient.');
+    } finally {
+      setRegistering(false);
+    }
+  };
 
   const bmi =
     vitals.weight && vitals.height
@@ -287,10 +386,138 @@ export function NewVisitForm() {
             </Card>
           )}
 
-          {consentStatus === 'denied' && (
-            <div className="text-center py-4">
-              <p className="text-sm text-muted-foreground">Patient not found. Verify the DID or phone number.</p>
+          {consentStatus === 'denied' && !showRegisterForm && (
+            <div className="text-center py-6 border border-dashed rounded-lg bg-card p-6">
+              <p className="text-sm text-muted-foreground mb-4">Patient not found. Verify the DID or phone number, or register them as a new patient.</p>
+              <Button onClick={() => setShowRegisterForm(true)} className="gap-2 mx-auto">
+                <Plus className="w-4 h-4" />
+                Register New Patient
+              </Button>
             </div>
+          )}
+
+          {showRegisterForm && (
+            <Card className="animate-float-in">
+              <CardHeader>
+                <CardTitle className="text-sm font-semibold">Register New Patient Profile</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {submitError && (
+                  <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-xs flex items-center gap-2">
+                    <XCircle className="size-4 shrink-0" />
+                    <span>{submitError}</span>
+                  </div>
+                )}
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="firstName">First Name *</Label>
+                    <Input
+                      id="firstName"
+                      placeholder="Jane"
+                      value={newPatient.firstName}
+                      onChange={(e) => setNewPatient({ ...newPatient, firstName: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="lastName">Last Name *</Label>
+                    <Input
+                      id="lastName"
+                      placeholder="Doe"
+                      value={newPatient.lastName}
+                      onChange={(e) => setNewPatient({ ...newPatient, lastName: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="email">Email Address *</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="jane.doe@example.com"
+                      value={newPatient.email}
+                      onChange={(e) => setNewPatient({ ...newPatient, email: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="phone">Phone Number *</Label>
+                    <Input
+                      id="phone"
+                      placeholder="+237677123456"
+                      value={newPatient.phone}
+                      onChange={(e) => setNewPatient({ ...newPatient, phone: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="dob">Date of Birth</Label>
+                    <Input
+                      id="dob"
+                      type="date"
+                      value={newPatient.dateOfBirth}
+                      onChange={(e) => setNewPatient({ ...newPatient, dateOfBirth: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="gender">Gender</Label>
+                    <select
+                      id="gender"
+                      value={newPatient.gender}
+                      onChange={(e) => setNewPatient({ ...newPatient, gender: e.target.value as any })}
+                      className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                      <option value="MALE">Male</option>
+                      <option value="FEMALE">Female</option>
+                      <option value="OTHER">Other</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="blood">Blood Group</Label>
+                    <Input
+                      id="blood"
+                      placeholder="O+"
+                      value={newPatient.bloodGroup}
+                      onChange={(e) => setNewPatient({ ...newPatient, bloodGroup: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="city">City</Label>
+                    <Input
+                      id="city"
+                      placeholder="Yaoundé"
+                      value={newPatient.city}
+                      onChange={(e) => setNewPatient({ ...newPatient, city: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="address">Address</Label>
+                    <Input
+                      id="address"
+                      placeholder="Bastos, Rue 1.023"
+                      value={newPatient.address}
+                      onChange={(e) => setNewPatient({ ...newPatient, address: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-2 justify-end pt-4">
+                  <Button variant="outline" onClick={() => setShowRegisterForm(false)} disabled={registering}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleRegisterPatient} disabled={registering} className="gap-2">
+                    {registering ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                    Register & Continue
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           )}
         </div>
       )}
