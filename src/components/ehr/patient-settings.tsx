@@ -12,8 +12,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
-  User, Shield, AlertTriangle, Phone, Save, Plus, Trash2, Loader2, CheckCircle2,
+  User, Shield, AlertTriangle, Phone, Save, Plus, Trash2, Loader2, CheckCircle2, Camera,
 } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useAppStore } from '@/lib/store';
 import {
   useMyPatientProfile,
   useMyAllergies,
@@ -28,10 +30,22 @@ import type { PatientProfile, Allergy } from '@/lib/api';
 
 // ── Profile Tab ────────────────────────────────────────────────────────────
 function ProfileTab() {
+  const { userPhoto, setUserPhoto, userName } = useAppStore();
   const { data: profile, isLoading } = useMyPatientProfile();
   const { mutate: updateProfile, isPending: saving, isSuccess, error } = useUpdateMyProfile();
   const [form, setForm] = useState<Partial<PatientProfile>>({});
   const [dirty, setDirty] = useState(false);
+
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUserPhoto(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   useEffect(() => {
     if (profile) setForm(profile);
@@ -71,6 +85,38 @@ function ProfileTab() {
 
   return (
     <div className="space-y-6">
+      <FormSection title="Profile Picture" description="Upload a personal photo for your MediChain account">
+        <div className="flex items-center gap-4">
+          <Avatar className="size-16 border border-border shadow-sm">
+            <AvatarImage src={userPhoto || undefined} alt={userName} className="object-cover" />
+            <AvatarFallback className="bg-primary/10 text-primary text-lg font-bold">
+              {userName.split(' ').map(n => n[0]).join('').slice(0, 2)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="patient-photo-upload" className="cursor-pointer inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-secondary text-secondary-foreground text-xs font-medium hover:bg-secondary/80 transition-colors">
+                <Camera className="size-3.5" />
+                {userPhoto ? 'Change Photo' : 'Upload Photo'}
+              </Label>
+              <input
+                id="patient-photo-upload"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handlePhotoUpload}
+              />
+              {userPhoto && (
+                <Button type="button" variant="ghost" size="sm" className="h-7 text-xs text-destructive hover:text-destructive" onClick={() => setUserPhoto(null)}>
+                  Remove
+                </Button>
+              )}
+            </div>
+            <p className="text-[11px] text-muted-foreground">Supported formats: JPG, PNG, WEBP. Reflects across dashboard placeholders.</p>
+          </div>
+        </div>
+      </FormSection>
+
       <FormSection title="Personal Information" description="Basic profile details linked to your DID">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">

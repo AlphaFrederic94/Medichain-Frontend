@@ -196,7 +196,7 @@ export function DoctorFacility() {
         <CardHeader>
           <CardTitle className="text-base font-semibold flex items-center gap-2">
             <Building2 className="size-4 text-primary" />
-            AfriHealth Network Facilities
+            MediChain Network Facilities
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">

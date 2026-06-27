@@ -19,6 +19,7 @@ import { usePatientRecords, usePatientConsentHistory, useGrantConsent, useRevoke
 import { useStaffByDid } from '@/lib/hooks/use-provider';
 import { useAppStore } from '@/lib/store';
 import type { Encounter } from '@/lib/api';
+import { doctors } from '@/lib/mock-data';
 
 function ProviderNameCell({ providerDid }: { providerDid: string }) {
   const { data: profile, isLoading } = useStaffByDid(providerDid);
@@ -61,11 +62,19 @@ export function ConsentManagement() {
   const { mutateAsync: revokeConsent, isPending: revoking } = useRevokeConsent();
 
   const [grantDialogOpen, setGrantDialogOpen] = useState(false);
-  const [grantForm, setGrantForm] = useState({ providerDid: '', accessTypes: [] as string[], duration: '24h', purpose: '' });
+  const [grantForm, setGrantForm] = useState({ providerDid: '', accessTypes: [] as string[], selectedDocuments: [] as string[], duration: '24h', purpose: '' });
   const [submitting, setSubmitting] = useState(false);
 
   const encounters = records?.encounters ?? [];
   const accessLog = buildAccessLog(encounters);
+
+  const availableDocs = (records?.documents && records.documents.length > 0)
+    ? records.documents
+    : [
+        { id: 'doc-1', fileName: 'Comprehensive Blood Test Results.pdf', documentType: 'LAB_RESULT' },
+        { id: 'doc-2', fileName: 'Chest X-Ray Imaging Scan.jpg', documentType: 'XRAY' },
+        { id: 'doc-3', fileName: 'Cardiology Follow-up Report.pdf', documentType: 'DISCHARGE_SUMMARY' }
+      ];
 
   const activeConsents = (consentHistory ?? []).filter(
     (c) => c.status === 'ACTIVE' && new Date(c.expiresAt) > new Date()
@@ -80,6 +89,15 @@ export function ConsentManagement() {
     }));
   };
 
+  const toggleDocument = (docId: string) => {
+    setGrantForm((prev) => ({
+      ...prev,
+      selectedDocuments: prev.selectedDocuments.includes(docId)
+        ? prev.selectedDocuments.filter((id) => id !== docId)
+        : [...prev.selectedDocuments, docId],
+    }));
+  };
+
   const handleGrantConsent = async () => {
     if (!grantForm.providerDid || grantForm.accessTypes.length === 0) return;
     setSubmitting(true);
@@ -90,10 +108,10 @@ export function ConsentManagement() {
         providerDid: grantForm.providerDid,
         scopes: grantForm.accessTypes.map((t) => t.toUpperCase()),
         expiresAt,
-        purpose: grantForm.purpose || 'Clinical care',
+        purpose: `${grantForm.purpose || 'Clinical care'}${grantForm.selectedDocuments.length > 0 ? ` (Docs: ${grantForm.selectedDocuments.length} selected)` : ''}`,
       });
       setGrantDialogOpen(false);
-      setGrantForm({ providerDid: '', accessTypes: [], duration: '24h', purpose: '' });
+      setGrantForm({ providerDid: '', accessTypes: [], selectedDocuments: [], duration: '24h', purpose: '' });
     } catch (err) {
       console.error(err);
       alert((err as Error).message || 'Failed to grant consent.');
@@ -229,12 +247,12 @@ export function ConsentManagement() {
       <Card className="mb-6 animate-fade-in border-primary/20 bg-primary/5">
         <CardContent className="p-5 flex items-start gap-4">
           <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-            <ShieldCheck className="size-5 text-primary" />
+            <img src="/medichain.png" alt="MediChain" className="size-6 object-contain" />
           </div>
           <div className="space-y-1">
-            <h3 className="font-semibold text-sm text-foreground">AfriHealth Chain Consent Model</h3>
+            <h3 className="font-semibold text-sm text-foreground">MediChain Consent Model</h3>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Your consent is enforced on-chain. Every provider who accesses your records is verified against the AfriHealth blockchain.
+              Your consent is enforced on-chain. Every provider who accesses your records is verified against the MediChain blockchain.
               Access is automatically logged and immutable. You can review who has seen your records below.
             </p>
           </div>
@@ -328,7 +346,7 @@ export function ConsentManagement() {
           <h3 className="text-sm font-semibold text-foreground">How your data is protected</h3>
           <div className="space-y-2">
             {[
-              'Every record access is anchored immutably on AfriHealth Chain',
+              'Every record access is anchored immutably on MediChain',
               'Providers must have your explicit consent before viewing sensitive records',
               'Time-limited access windows are enforced automatically',
               'You can review the full audit trail anytime in this page',
@@ -356,13 +374,19 @@ export function ConsentManagement() {
               <span>Granting access issues a signed blockchain consent token. The provider can access your records for the specified duration.</span>
             </div>
             <div className="space-y-2">
-              <Label>Provider DID</Label>
-              <Input
-                placeholder="did:afrihealth:DR-CMR-XXXXX"
+              <Label>Select Provider / Doctor</Label>
+              <select
                 value={grantForm.providerDid}
                 onChange={(e) => setGrantForm({ ...grantForm, providerDid: e.target.value })}
-                className="font-mono text-sm"
-              />
+                className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="">-- Choose a doctor or facility --</option>
+                {doctors.map((doc) => (
+                  <option key={doc.did} value={doc.did}>
+                    {doc.name} ({doc.specialty} — {doc.facility})
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="space-y-2">
               <Label>Access Scope</Label>
@@ -383,6 +407,25 @@ export function ConsentManagement() {
                 ))}
               </div>
             </div>
+            {grantForm.accessTypes.includes('Documents') && (
+              <div className="space-y-2 animate-fade-in">
+                <Label className="text-xs font-semibold text-primary">Select Specific Documents to Share</Label>
+                <div className="space-y-2 max-h-36 overflow-y-auto p-2 rounded-md border border-border bg-muted/30">
+                  {availableDocs.map((doc: any) => (
+                    <label key={doc.id} className="flex items-center gap-2.5 text-xs cursor-pointer hover:bg-muted/50 p-1.5 rounded">
+                      <input
+                        type="checkbox"
+                        checked={grantForm.selectedDocuments.includes(doc.id)}
+                        onChange={() => toggleDocument(doc.id)}
+                        className="rounded border-border text-primary focus:ring-primary size-4"
+                      />
+                      <span className="font-medium truncate flex-1">{doc.fileName}</span>
+                      <Badge variant="outline" className="text-[10px] py-0">{doc.documentType}</Badge>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="space-y-2">
               <Label>Duration</Label>
               <div className="flex gap-2">

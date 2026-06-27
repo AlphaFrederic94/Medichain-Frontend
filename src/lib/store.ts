@@ -48,6 +48,7 @@ interface AppState {
   userDid: string;
   userName: string;
   userEmail: string;
+  userPhoto: string | null;
   authUser: AuthUser | null;
 
   // Navigation
@@ -65,6 +66,7 @@ interface AppState {
   // Actions
   setAuth: (user: AuthUser, accessToken: string, refreshToken: string) => void;
   restoreAuth: (user: AuthUser) => void;
+  setUserPhoto: (photo: string | null) => void;
   logout: () => void;
   navigate: (page: Page) => void;
   toggleSidebar: () => void;
@@ -78,6 +80,7 @@ export const useAppStore = create<AppState>((set) => ({
   userDid: '',
   userName: '',
   userEmail: '',
+  userPhoto: null,
   authUser: null,
   currentPage: 'login',
   sidebarCollapsed: false,
@@ -94,12 +97,14 @@ export const useAppStore = create<AppState>((set) => ({
         : role === 'doctor'
           ? 'doctor-dashboard'
           : 'admin-dashboard';
+    const savedPhoto = typeof window !== 'undefined' ? localStorage.getItem('user_photo_' + user.did) : null;
     set({
       isAuthenticated: true,
       role,
       userDid: user.did,
       userName: `${user.firstName} ${user.lastName}`,
       userEmail: user.email,
+      userPhoto: savedPhoto,
       authUser: user,
       currentPage: defaultPage,
     });
@@ -113,16 +118,27 @@ export const useAppStore = create<AppState>((set) => ({
         : role === 'doctor'
           ? 'doctor-dashboard'
           : 'admin-dashboard';
+    const savedPhoto = typeof window !== 'undefined' ? localStorage.getItem('user_photo_' + user.did) : null;
     set((state) => ({
       isAuthenticated: true,
       role,
       userDid: user.did,
       userName: `${user.firstName} ${user.lastName}`,
       userEmail: user.email,
+      userPhoto: savedPhoto || state.userPhoto,
       authUser: user,
       currentPage: state.currentPage === 'login' ? defaultPage : state.currentPage,
     }));
   },
+
+  setUserPhoto: (photo) =>
+    set((state) => {
+      if (typeof window !== 'undefined' && state.userDid) {
+        if (photo) localStorage.setItem('user_photo_' + state.userDid, photo);
+        else localStorage.removeItem('user_photo_' + state.userDid);
+      }
+      return { userPhoto: photo };
+    }),
 
   logout: () => {
     clearTokens();
@@ -132,6 +148,7 @@ export const useAppStore = create<AppState>((set) => ({
       userDid: '',
       userName: '',
       userEmail: '',
+      userPhoto: null,
       authUser: null,
       currentPage: 'login',
       sidebarCollapsed: false,

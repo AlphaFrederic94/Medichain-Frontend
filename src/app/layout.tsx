@@ -29,10 +29,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <title>AfriHealth Chain — Electronic Health Records</title>
+        <title>MediChain — Electronic Health Records</title>
         <meta
           name="description"
-          content="Blockchain-secured health records with patient-controlled consent, built for Africa's healthcare future."
+          content="Blockchain-secured health records with patient-controlled consent, built for modern healthcare."
         />
       </head>
       <body

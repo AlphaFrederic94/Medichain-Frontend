@@ -27,7 +27,7 @@ import {
   TooltipContent,
   TooltipProvider,
 } from '@/components/ui/tooltip';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -95,6 +95,7 @@ function SidebarContent({ collapsed }: { collapsed: boolean }) {
   const {
     role,
     userName,
+    userPhoto,
     currentPage,
     navigate,
     toggleSidebar,
@@ -107,10 +108,10 @@ function SidebarContent({ collapsed }: { collapsed: boolean }) {
     <div className="flex h-full flex-col bg-background">
       {/* ── Logo ─────────────────────────────────────────── */}
       <div className="flex h-16 items-center gap-2 px-4 border-b border-border">
-        <Shield className="size-7 shrink-0 text-primary" />
+        <img src="/medichain.png" alt="MediChain Logo" className="size-8 shrink-0 object-contain" />
         {!collapsed && (
           <span className="text-lg font-bold tracking-tight text-primary whitespace-nowrap">
-            AfriHealth
+            MediChain
           </span>
         )}
       </div>
@@ -119,6 +120,7 @@ function SidebarContent({ collapsed }: { collapsed: boolean }) {
       {!collapsed && (
         <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
           <Avatar className="size-9 shrink-0">
+            <AvatarImage src={userPhoto || undefined} alt={userName} className="object-cover" />
             <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
               {getInitials(userName)}
             </AvatarFallback>
@@ -136,6 +138,7 @@ function SidebarContent({ collapsed }: { collapsed: boolean }) {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Avatar className="size-9">
+                  <AvatarImage src={userPhoto || undefined} alt={userName} className="object-cover" />
                   <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
                     {getInitials(userName)}
                   </AvatarFallback>

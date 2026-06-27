@@ -78,20 +78,20 @@ export function LoginPage() {
         </div>
         <div className="relative z-10 max-w-lg text-primary-foreground">
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-              <Shield className="w-7 h-7" />
+            <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center overflow-hidden p-1">
+              <img src="/medichain.png" alt="MediChain" className="w-9 h-9 object-contain" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">AfriHealth Chain</h1>
+              <h1 className="text-2xl font-bold tracking-tight">MediChain</h1>
               <p className="text-sm opacity-80">Electronic Health Records</p>
             </div>
           </div>
           <h2 className="text-3xl lg:text-4xl font-bold leading-tight mb-4">
             Your health story.<br />Your chain.<br />
-            <span className="opacity-80">Everywhere in Africa.</span>
+            <span className="opacity-80">Secure & universal.</span>
           </h2>
           <p className="text-base opacity-70 mb-10 leading-relaxed">
-            Blockchain-secured health records with patient-controlled consent, built for Africa&apos;s healthcare future.
+            Blockchain-secured health records with patient-controlled consent, built for modern healthcare.
           </p>
           <div className="space-y-5">
             {[
@@ -260,7 +260,7 @@ export function LoginPage() {
 
           <div className="mt-6 pt-6 border-t border-border">
             <p className="text-center text-xs text-muted-foreground mb-3">
-              {mode === 'login' ? 'New to AfriHealth Chain?' : 'Already have an account?'}
+              {mode === 'login' ? 'New to MediChain?' : 'Already have an account?'}
             </p>
             <Button
               type="button"

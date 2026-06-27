@@ -275,7 +275,7 @@ export function NewVisitForm() {
   // ── Success screen ─────────────────────────────────────────────
   if (submitted) {
     return (
-      <PageContainer title="Visit Recorded" subtitle="Encounter anchored to AfriHealth Chain">
+      <PageContainer title="Visit Recorded" subtitle="Encounter anchored to MediChain">
         <Card className="max-w-lg mx-auto text-center animate-float-in">
           <CardContent className="py-12 space-y-4">
             <div className="w-16 h-16 mx-auto rounded-full bg-emerald-accent/10 flex items-center justify-center">
@@ -283,7 +283,7 @@ export function NewVisitForm() {
             </div>
             <h2 className="text-xl font-bold">Successfully Anchored</h2>
             <p className="text-sm text-muted-foreground">
-              This encounter has been immutably recorded on AfriHealth Chain.
+              This encounter has been immutably recorded on MediChain.
             </p>
             <div className="pt-4">
               <ChainBadge txHash={encounterId} verified />
@@ -792,7 +792,7 @@ export function NewVisitForm() {
             disabled={submitting || !patientFound}
           >
             {submitting ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> Submitting to AfriHealth Chain...</>
+              <><Loader2 className="w-4 h-4 animate-spin" /> Submitting to MediChain...</>
             ) : (
               <><Link2 className="w-4 h-4" /> Submit & Anchor to Blockchain</>
             )}

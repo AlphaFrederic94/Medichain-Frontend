@@ -109,6 +109,22 @@ function EncounterCard({ encounter, diagnoses, prescriptions, vitals }: {
 
       {expanded && (
         <div className="mt-3 space-y-4 rounded-lg border bg-muted/30 p-4 animate-fade-in">
+          {encounter.chiefComplaint && (
+            <div className="p-3 rounded-lg bg-primary/5 border border-primary/15">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-primary mb-1">Chief Complaint / Clinical Findings</p>
+              <p className="text-xs text-foreground leading-relaxed">{encounter.chiefComplaint}</p>
+            </div>
+          )}
+          {encounter.notes ? (
+            <div className="p-3 rounded-lg bg-emerald-accent/5 border border-emerald-accent/15">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-accent mb-1">Clinical Notes & Treatment Plan</p>
+              <p className="text-xs text-foreground leading-relaxed whitespace-pre-wrap">{encounter.notes}</p>
+            </div>
+          ) : (
+            !encounter.chiefComplaint && (
+              <p className="text-xs text-muted-foreground italic">No detailed clinical notes recorded for this encounter.</p>
+            )
+          )}
           {encDiagnoses.length > 0 && (
             <div>
               <p className="text-xs font-semibold mb-2 uppercase tracking-wider">Diagnoses</p>
@@ -168,12 +184,6 @@ function EncounterCard({ encounter, diagnoses, prescriptions, vitals }: {
             </div>
           )}
 
-          {encounter.notes && (
-            <div>
-              <p className="text-xs font-semibold mb-1.5 uppercase tracking-wider">Clinical Notes</p>
-              <p className="text-xs text-muted-foreground leading-relaxed">{encounter.notes}</p>
-            </div>
-          )}
         </div>
       )}
     </div>

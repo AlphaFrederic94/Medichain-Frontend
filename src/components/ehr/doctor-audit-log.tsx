@@ -141,12 +141,12 @@ export function DoctorAuditLog() {
   return (
     <PageContainer
       title="Audit Log"
-      subtitle="Every clinical action, immutably recorded on AfriHealth Chain"
+      subtitle="Every clinical action, immutably recorded on MediChain"
     >
       {/* Blockchain banner */}
       <Card className="mb-6 animate-fade-in border-primary/20 bg-primary/5">
         <CardContent className="p-4 flex items-center gap-3">
-          <Shield className="size-5 text-primary shrink-0" />
+          <img src="/medichain.png" alt="MediChain" className="size-5 object-contain shrink-0" />
           <div>
             <p className="text-sm font-semibold text-foreground">Blockchain-Verified Audit Trail</p>
             <p className="text-xs text-muted-foreground">

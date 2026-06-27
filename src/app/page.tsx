@@ -105,9 +105,9 @@ export default function Home() {
         )}
       >
         <div className="flex items-center justify-center gap-2">
-          <span className="font-medium text-primary">AfriHealth Chain</span>
+          <span className="font-medium text-primary">MediChain</span>
           <span>·</span>
-          <span>Your health story. Your chain. Everywhere in Africa.</span>
+          <span>Your health story. Your chain. Secure & universal.</span>
         </div>
       </footer>
     </div>

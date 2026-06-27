@@ -4,7 +4,7 @@ import React from 'react';
 import { Sun, Moon, Bell, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useAppStore, type Page } from '@/lib/store';
@@ -51,6 +51,7 @@ export function AppHeader() {
     currentPage,
     role,
     userName,
+    userPhoto,
     darkMode,
     toggleDarkMode,
     sidebarCollapsed,
@@ -112,6 +113,7 @@ export function AppHeader() {
         {/* User info */}
         <div className="hidden sm:flex items-center gap-2.5">
           <Avatar className="size-8">
+            <AvatarImage src={userPhoto || undefined} alt={userName} className="object-cover" />
             <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
               {getInitials(userName)}
             </AvatarFallback>
