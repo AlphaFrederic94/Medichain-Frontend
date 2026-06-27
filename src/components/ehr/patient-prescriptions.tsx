@@ -71,7 +71,6 @@ function PrescriptionCard({ rx }: { rx: Prescription }) {
               Dispensed: {new Date(rx.dispensedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             </span>
           )}
-          <span className="font-mono text-[10px]">By: {rx.prescribedBy.slice(0, 22)}…</span>
         </div>
       </CardContent>
     </Card>

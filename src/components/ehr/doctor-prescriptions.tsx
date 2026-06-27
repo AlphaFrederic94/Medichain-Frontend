@@ -21,11 +21,10 @@ import type { Prescription } from '@/lib/api';
 function PatientNameCell({ patientDid }: { patientDid: string }) {
   const { data: profile, isLoading } = usePatientByDid(patientDid);
   if (isLoading) return <span className="text-xs text-muted-foreground animate-pulse">Loading name...</span>;
-  if (!profile) return <span className="font-mono text-xs text-muted-foreground">{patientDid}</span>;
+  if (!profile) return <span className="text-xs text-muted-foreground">Patient record</span>;
   return (
     <div className="flex flex-col text-left">
       <span className="font-medium text-sm text-foreground">{profile.firstName} {profile.lastName}</span>
-      <span className="font-mono text-[10px] text-muted-foreground truncate max-w-[180px]">{patientDid}</span>
     </div>
   );
 }
@@ -116,7 +115,7 @@ export function DoctorPrescriptions() {
             {rx.dispensed ? (
               <><CheckCircle2 className="size-3 mr-1" /> Dispensed</>
             ) : (
-              <><Clock className="size-3 mr-1" /> Pending</>
+              <><Clock className="size-3 mr-1" /> Active</>
             )}
           </Badge>
         );
@@ -165,7 +164,7 @@ export function DoctorPrescriptions() {
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <StatCard title="Total Issued" value={allRx.length} accentColor="primary" />
-        <StatCard title="Pending Dispense" value={pending.length} accentColor="amber-warm" />
+        <StatCard title="Active" value={pending.length} accentColor="amber-warm" />
         <StatCard title="Dispensed" value={dispensed.length} accentColor="emerald-accent" />
       </div>
 
@@ -174,7 +173,7 @@ export function DoctorPrescriptions() {
         <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
           <TabsList>
             <TabsTrigger value="all">All ({allRx.length})</TabsTrigger>
-            <TabsTrigger value="pending">Pending ({pending.length})</TabsTrigger>
+            <TabsTrigger value="pending">Active ({pending.length})</TabsTrigger>
             <TabsTrigger value="dispensed">Dispensed ({dispensed.length})</TabsTrigger>
           </TabsList>
         </Tabs>

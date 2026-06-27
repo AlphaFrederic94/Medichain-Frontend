@@ -214,7 +214,7 @@ export interface Vitals {
 
 export interface MedicalDocument {
   id: string;
-  encounterId: string;
+  encounterId?: string;
   patientDid: string;
   documentType: 'LAB_RESULT' | 'XRAY' | 'SCAN' | 'DISCHARGE_SUMMARY' | 'REFERRAL' | 'OTHER';
   fileName: string;
@@ -285,3 +285,4 @@ export interface PatientSearchResult {
   city?: string;
   phone?: string;
 }
+

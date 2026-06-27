@@ -79,14 +79,6 @@ export function DoctorDashboard() {
         ),
       },
       {
-        header: 'DID',
-        accessor: (row) => (
-          <span className="font-mono text-xs text-muted-foreground truncate max-w-[180px] inline-block">
-            {(row as PatientSearchResult).userDid}
-          </span>
-        ),
-      },
-      {
         header: 'Blood Group',
         accessor: (row) => (row as PatientSearchResult).bloodGroup ?? '—',
         headerClassName: 'w-[100px]',
@@ -186,7 +178,7 @@ export function DoctorDashboard() {
           accentColor="primary"
         />
         <StatCard
-          title="Pending Prescriptions"
+          title="Active Prescriptions"
           value={activePrescriptions}
           trend="neutral"
           trendPercentage="0"
@@ -214,18 +206,14 @@ export function DoctorDashboard() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
               <Input
-                placeholder="Search by DID, name, or phone number"
+                placeholder="Search by patient name or phone number"
                 className="pl-9 h-10"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && searchQuery.trim()) {
                     const q = searchQuery.trim();
-                    searchPatients(
-                      q.startsWith('did:') ? { did: q }
-                      : /^\+?\d/.test(q) ? { phone: q }
-                      : { name: q }
-                    );
+                    searchPatients(/^\+?\d/.test(q) ? { phone: q } : { name: q });
                   }
                 }}
               />
@@ -236,11 +224,7 @@ export function DoctorDashboard() {
               disabled={searching || !searchQuery.trim()}
               onClick={() => {
                 const q = searchQuery.trim();
-                searchPatients(
-                  q.startsWith('did:') ? { did: q }
-                  : /^\+?\d/.test(q) ? { phone: q }
-                  : { name: q }
-                );
+                searchPatients(/^\+?\d/.test(q) ? { phone: q } : { name: q });
               }}
             >
               {searching ? <Loader2 className="size-4 animate-spin" /> : <QrCode className="size-4" />}
@@ -270,7 +254,7 @@ export function DoctorDashboard() {
 
           <div className="mt-4 flex items-center justify-between border-t pt-3">
             <p className="text-xs text-muted-foreground">
-              Search the AfriHealth Chain patient registry
+              Search the patient registry by name or phone
             </p>
             <Button
               variant="link"

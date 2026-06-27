@@ -171,9 +171,9 @@ export function NewVisitForm() {
   const searchPatient = () => {
     const q = patientDid.trim();
     if (!q) return;
-    const isDid = q.startsWith('did:');
+    const isPhone = /^\+?\d/.test(q);
     searchPatientsApi(
-      isDid ? { did: q } : { phone: q },
+      isPhone ? { phone: q } : { name: q },
       {
         onSuccess: (results) => {
           if (results.length > 0) {
@@ -336,12 +336,12 @@ export function NewVisitForm() {
         <div className="max-w-2xl space-y-6 animate-fade-in">
           <FormSection
             title="Patient Verification"
-            description="Enter the patient DID or phone number to verify identity."
+            description="Enter the patient name or phone number to verify identity."
           >
             <div className="flex gap-3">
               <div className="flex-1">
                 <Input
-                  placeholder="did:afrihealth:CMR-XXXXXXXX or phone number"
+                  placeholder="Patient name or phone number"
                   value={patientDid}
                   onChange={(e) => setPatientDid(e.target.value)}
                   className="font-mono text-sm"
@@ -364,7 +364,6 @@ export function NewVisitForm() {
                   </div>
                   <div>
                     <h3 className="font-semibold">{patientFound.firstName} {patientFound.lastName}</h3>
-                    <p className="text-xs text-muted-foreground font-mono">{patientFound.userDid}</p>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -388,7 +387,7 @@ export function NewVisitForm() {
 
           {consentStatus === 'denied' && !showRegisterForm && (
             <div className="text-center py-6 border border-dashed rounded-lg bg-card p-6">
-              <p className="text-sm text-muted-foreground mb-4">Patient not found. Verify the DID or phone number, or register them as a new patient.</p>
+              <p className="text-sm text-muted-foreground mb-4">Patient not found. Verify the name or phone number, or register them as a new patient.</p>
               <Button onClick={() => setShowRegisterForm(true)} className="gap-2 mx-auto">
                 <Plus className="w-4 h-4" />
                 Register New Patient

@@ -1,39 +1,52 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { PageContainer } from '@/components/ehr/page-container';
 import { StatCard } from '@/components/ehr/stat-card';
 import { ChainBadge } from '@/components/ehr/chain-badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
-  FolderOpen, Search, FileText, Image, Scan, FileArchive,
-  ExternalLink, Calendar, User,
+  FolderOpen, Search, FileText, Scan, FileArchive,
+  ExternalLink, Calendar, User, Upload, Loader2, Download,
 } from 'lucide-react';
-import { usePatientDocuments } from '@/lib/hooks/use-records';
+import { usePatientDocuments, useUploadDocument } from '@/lib/hooks/use-records';
 import { useAppStore } from '@/lib/store';
 import type { MedicalDocument } from '@/lib/api';
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
 const DOCTYPE_CONFIG: Record<MedicalDocument['documentType'], { icon: React.ElementType; label: string; color: string }> = {
-  LAB_RESULT:       { icon: FileText,    label: 'Lab Result',        color: 'text-primary bg-primary/10' },
-  XRAY:             { icon: Scan,        label: 'X-Ray',             color: 'text-amber-warm bg-amber-warm/10' },
-  SCAN:             { icon: Scan,        label: 'Scan',              color: 'text-amber-warm bg-amber-warm/10' },
-  DISCHARGE_SUMMARY:{ icon: FileArchive, label: 'Discharge Summary', color: 'text-emerald-accent bg-emerald-accent/10' },
-  REFERRAL:         { icon: ExternalLink, label: 'Referral',         color: 'text-primary bg-primary/10' },
-  OTHER:            { icon: FileText,    label: 'Other',             color: 'text-muted-foreground bg-muted' },
+  LAB_RESULT: { icon: FileText, label: 'Lab Result', color: 'text-primary bg-primary/10' },
+  XRAY: { icon: Scan, label: 'X-Ray', color: 'text-amber-warm bg-amber-warm/10' },
+  SCAN: { icon: Scan, label: 'Scan', color: 'text-amber-warm bg-amber-warm/10' },
+  DISCHARGE_SUMMARY: { icon: FileArchive, label: 'Discharge Summary', color: 'text-emerald-accent bg-emerald-accent/10' },
+  REFERRAL: { icon: ExternalLink, label: 'Referral', color: 'text-primary bg-primary/10' },
+  OTHER: { icon: FileText, label: 'Other', color: 'text-muted-foreground bg-muted' },
 };
+
+function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error('Unable to read selected file'));
+    reader.readAsDataURL(file);
+  });
+}
 
 function DocumentCard({ doc }: { doc: MedicalDocument }) {
   const cfg = DOCTYPE_CONFIG[doc.documentType];
   const Icon = cfg.icon;
+  const canDownload = doc.storagePath.startsWith('data:');
 
   return (
-    <Card className="animate-fade-in hover:shadow-md transition-shadow cursor-pointer group">
+    <Card className="animate-fade-in hover:shadow-md transition-shadow group">
       <CardContent className="p-5">
         <div className="flex items-start gap-4">
-          <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${cfg.color}`}>
+          <div className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0 ${cfg.color}`}>
             <Icon className="size-6" />
           </div>
           <div className="min-w-0 flex-1">
@@ -44,22 +57,27 @@ function DocumentCard({ doc }: { doc: MedicalDocument }) {
                 </h3>
                 <Badge variant="outline" className="text-xs mt-1">{cfg.label}</Badge>
               </div>
-              <ChainBadge verified />
+              <div className="flex items-center gap-2 shrink-0">
+                {canDownload && (
+                  <Button asChild variant="ghost" size="icon" className="size-8">
+                    <a href={doc.storagePath} download={doc.fileName} aria-label={`Download ${doc.fileName}`}>
+                      <Download className="size-4" />
+                    </a>
+                  </Button>
+                )}
+                <ChainBadge verified />
+              </div>
             </div>
             <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Calendar className="size-3" />
-                {new Date(doc.uploadedAt).toLocaleDateString('en-US', {
-                  month: 'short', day: 'numeric', year: 'numeric',
-                })}
+                {new Date(doc.uploadedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
               </span>
               <span className="flex items-center gap-1">
                 <User className="size-3" />
-                <span className="font-mono text-[10px] truncate max-w-[160px]">{doc.uploadedBy}</span>
+                Uploaded to record
               </span>
-              {doc.fileSize && (
-                <span>{(doc.fileSize / 1024).toFixed(1)} KB</span>
-              )}
+              {doc.fileSize && <span>{(doc.fileSize / 1024).toFixed(1)} KB</span>}
             </div>
           </div>
         </div>
@@ -71,8 +89,12 @@ function DocumentCard({ doc }: { doc: MedicalDocument }) {
 export function PatientDocuments() {
   const userDid = useAppStore((s) => s.userDid);
   const { data: documents, isLoading } = usePatientDocuments(userDid);
+  const { mutateAsync: uploadDocument, isPending: uploading } = useUploadDocument();
+  const inputRef = useRef<HTMLInputElement>(null);
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState<MedicalDocument['documentType'] | 'ALL'>('ALL');
+  const [uploadType, setUploadType] = useState<MedicalDocument['documentType']>('OTHER');
+  const [uploadError, setUploadError] = useState('');
 
   const allDocs = documents ?? [];
   const uniqueTypes = Array.from(new Set(allDocs.map((d) => d.documentType)));
@@ -85,6 +107,32 @@ export function PatientDocuments() {
 
   const countByType = (type: MedicalDocument['documentType']) =>
     allDocs.filter((d) => d.documentType === type).length;
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file || !userDid) return;
+
+    setUploadError('');
+    if (file.size > MAX_FILE_SIZE) {
+      setUploadError('Medical records must be 5 MB or smaller.');
+      return;
+    }
+
+    try {
+      const storagePath = await readFileAsDataUrl(file);
+      await uploadDocument({
+        patientDid: userDid,
+        documentType: uploadType,
+        fileName: file.name,
+        storagePath,
+        fileSize: file.size,
+        mimeType: file.type || 'application/octet-stream',
+      });
+    } catch (err) {
+      setUploadError((err as Error).message || 'Upload failed.');
+    }
+  };
 
   if (isLoading) {
     return (
@@ -100,37 +148,50 @@ export function PatientDocuments() {
   }
 
   return (
-    <PageContainer title="Medical Documents" subtitle="Access your medical files, reports, and imaging">
-      {/* Stats */}
+    <PageContainer
+      title="Medical Documents"
+      subtitle="Access your medical files, reports, and imaging"
+      actions={
+        <div className="flex items-center gap-2">
+          <select
+            value={uploadType}
+            onChange={(e) => setUploadType(e.target.value as MedicalDocument['documentType'])}
+            className="h-9 rounded-md border border-input bg-background px-2 text-xs"
+            aria-label="Document type"
+          >
+            {Object.entries(DOCTYPE_CONFIG).map(([value, cfg]) => (
+              <option key={value} value={value}>{cfg.label}</option>
+            ))}
+          </select>
+          <input ref={inputRef} type="file" className="hidden" onChange={handleFileChange} />
+          <Button size="sm" className="gap-2" disabled={uploading} onClick={() => inputRef.current?.click()}>
+            {uploading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+            Upload
+          </Button>
+        </div>
+      }
+    >
+      {uploadError && (
+        <div className="mb-4 rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {uploadError}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <StatCard title="Total Documents" value={allDocs.length} accentColor="primary" />
         <StatCard title="Lab Results" value={countByType('LAB_RESULT')} accentColor="emerald-accent" />
         <StatCard title="Imaging" value={countByType('XRAY') + countByType('SCAN')} accentColor="amber-warm" />
       </div>
 
-      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setFilterType('ALL')}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-              filterType === 'ALL' ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted text-muted-foreground border-border'
-            }`}
-          >
+          <button onClick={() => setFilterType('ALL')} className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${filterType === 'ALL' ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted text-muted-foreground border-border'}`}>
             All ({allDocs.length})
           </button>
           {uniqueTypes.map((type) => {
             const cfg = DOCTYPE_CONFIG[type];
             return (
-              <button
-                key={type}
-                onClick={() => setFilterType(type)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-                  filterType === type
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'bg-muted text-muted-foreground border-border hover:border-primary/30'
-                }`}
-              >
+              <button key={type} onClick={() => setFilterType(type)} className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${filterType === type ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted text-muted-foreground border-border hover:border-primary/30'}`}>
                 {cfg.label} ({countByType(type)})
               </button>
             );
@@ -138,21 +199,13 @@ export function PatientDocuments() {
         </div>
         <div className="relative sm:ml-auto">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-          <Input
-            placeholder="Search documents…"
-            className="pl-9 h-9 w-full sm:w-64"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+          <Input placeholder="Search documents..." className="pl-9 h-9 w-full sm:w-64" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
       </div>
 
-      {/* Grid */}
       {filtered.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filtered.map((doc) => (
-            <DocumentCard key={doc.id} doc={doc} />
-          ))}
+          {filtered.map((doc) => <DocumentCard key={doc.id} doc={doc} />)}
         </div>
       ) : (
         <Card className="py-0">
@@ -162,9 +215,7 @@ export function PatientDocuments() {
               {allDocs.length === 0 ? 'No documents on record' : 'No matching documents'}
             </h3>
             <p className="text-sm text-muted-foreground">
-              {allDocs.length === 0
-                ? 'Medical documents uploaded by your providers will appear here.'
-                : 'Try adjusting your search or filter.'}
+              {allDocs.length === 0 ? 'Upload a medical record or report to store it here.' : 'Try adjusting your search or filter.'}
             </p>
           </CardContent>
         </Card>

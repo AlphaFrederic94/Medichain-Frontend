@@ -302,9 +302,6 @@ export function PatientRecords() {
             <div className="space-y-3 min-w-0">
               <h2 className="text-lg font-bold text-foreground">{patientName}</h2>
               <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="outline" className="font-mono text-xs px-2.5 py-1 bg-muted/60">
-                  {userDid || '—'}
-                </Badge>
                 {profile?.bloodGroup && (
                   <Badge className="bg-primary/10 text-primary border-primary/20 px-2.5 py-1 text-xs font-semibold">
                     <Droplets className="size-3 mr-1" /> {profile.bloodGroup}
@@ -389,9 +386,7 @@ export function PatientRecords() {
                       <span className="text-sm font-medium">{d.description}</span>
                       <DiagnosisStatusBadge status={d.status} />
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {formatDateTime(d.createdAt)} · By: {d.diagnosedBy.slice(0, 20)}…
-                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">{formatDateTime(d.createdAt)}</p>
                   </div>
                 </div>
               ))}

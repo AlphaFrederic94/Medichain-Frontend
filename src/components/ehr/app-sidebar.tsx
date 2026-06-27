@@ -94,7 +94,6 @@ function getInitials(name: string): string {
 function SidebarContent({ collapsed }: { collapsed: boolean }) {
   const {
     role,
-    userDid,
     userName,
     currentPage,
     navigate,
@@ -103,7 +102,6 @@ function SidebarContent({ collapsed }: { collapsed: boolean }) {
   } = useAppStore();
 
   const navItems = getNavItems(role);
-  const did = userDid || '—';
 
   return (
     <div className="flex h-full flex-col bg-background">
@@ -127,9 +125,7 @@ function SidebarContent({ collapsed }: { collapsed: boolean }) {
           </Avatar>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium truncate">{userName}</p>
-            <p className="font-mono text-[10px] text-muted-foreground truncate">
-              {did}
-            </p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide truncate">{role}</p>
           </div>
         </div>
       )}
@@ -147,7 +143,7 @@ function SidebarContent({ collapsed }: { collapsed: boolean }) {
               </TooltipTrigger>
               <TooltipContent side="right" className="flex flex-col items-start gap-1">
                 <span className="font-medium">{userName}</span>
-                <span className="font-mono text-[10px] text-primary-foreground/80">{did}</span>
+                <span className="text-[10px] text-primary-foreground/80 uppercase">{role}</span>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

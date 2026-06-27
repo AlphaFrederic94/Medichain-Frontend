@@ -138,6 +138,7 @@ export function useAddDiagnosis() {
     }) => api.post<Diagnosis>('/records/diagnoses', data),
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: ['records', 'diagnoses', vars.patientDid] });
+      qc.invalidateQueries({ queryKey: ['records', 'patient', vars.patientDid] });
     },
   });
 }
@@ -157,6 +158,7 @@ export function useCreatePrescription() {
     }) => api.post<Prescription>('/records/prescriptions', data),
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: ['records', 'prescriptions', vars.patientDid] });
+      qc.invalidateQueries({ queryKey: ['records', 'patient', vars.patientDid] });
     },
   });
 }
@@ -178,6 +180,7 @@ export function useRecordVitals() {
     }) => api.post<Vitals>('/records/vitals', data),
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: ['records', 'vitals', vars.patientDid] });
+      qc.invalidateQueries({ queryKey: ['records', 'patient', vars.patientDid] });
     },
   });
 }
@@ -221,7 +224,7 @@ export function useUploadDocument() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: {
-      encounterId: string;
+      encounterId?: string;
       patientDid: string;
       documentType: string;
       fileName: string;
@@ -231,6 +234,7 @@ export function useUploadDocument() {
     }) => api.post<MedicalDocument>('/records/documents', data),
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: ['records', 'documents', vars.patientDid] });
+      qc.invalidateQueries({ queryKey: ['records', 'patient', vars.patientDid] });
     },
   });
 }
@@ -282,3 +286,5 @@ export function useRevokeConsent() {
     },
   });
 }
+
+

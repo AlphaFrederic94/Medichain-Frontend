@@ -19,11 +19,10 @@ import type { Encounter } from '@/lib/api';
 function PatientNameCell({ patientDid }: { patientDid: string }) {
   const { data: profile, isLoading } = usePatientByDid(patientDid);
   if (isLoading) return <span className="text-xs text-muted-foreground animate-pulse">Loading name...</span>;
-  if (!profile) return <span className="font-mono text-xs text-muted-foreground">{patientDid}</span>;
+  if (!profile) return <span className="text-xs text-muted-foreground">Patient record</span>;
   return (
     <div className="flex flex-col text-left">
       <span className="font-medium text-sm text-foreground">{profile.firstName} {profile.lastName}</span>
-      <span className="font-mono text-[10px] text-muted-foreground truncate max-w-[180px]">{patientDid}</span>
     </div>
   );
 }
@@ -170,8 +169,8 @@ export function DoctorMyPatients() {
       <div className="relative mb-4">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
         <Input
-          placeholder="Search by patient DID…"
-          className="pl-9 font-mono text-sm"
+          placeholder="Search patients…"
+          className="pl-9 text-sm"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
