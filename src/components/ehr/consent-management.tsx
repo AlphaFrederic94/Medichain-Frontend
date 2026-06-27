@@ -16,7 +16,7 @@ import {
   ShieldCheck, Plus, Clock, CheckCircle2, AlertCircle, Lock, Ban, UserCheck, Trash2, Loader2,
 } from 'lucide-react';
 import { usePatientRecords, usePatientConsentHistory, useGrantConsent, useRevokeConsent, type ConsentHistoryItem } from '@/lib/hooks/use-records';
-import { useStaffByDid } from '@/lib/hooks/use-provider';
+import { useStaffByDid, useAllStaff } from '@/lib/hooks/use-provider';
 import { useAppStore } from '@/lib/store';
 import type { Encounter } from '@/lib/api';
 import { doctors } from '@/lib/mock-data';
@@ -58,6 +58,7 @@ export function ConsentManagement() {
   const userDid = useAppStore((s) => s.userDid);
   const { data: records, isLoading: recordsLoading } = usePatientRecords(userDid);
   const { data: consentHistory, isLoading: consentsLoading } = usePatientConsentHistory(userDid);
+  const { data: staffList } = useAllStaff();
   const { mutateAsync: grantConsent } = useGrantConsent();
   const { mutateAsync: revokeConsent, isPending: revoking } = useRevokeConsent();
 
@@ -67,6 +68,15 @@ export function ConsentManagement() {
 
   const encounters = records?.encounters ?? [];
   const accessLog = buildAccessLog(encounters);
+
+  const displayDoctors = (staffList && staffList.length > 0)
+    ? staffList.map(s => ({
+        did: s.userDid,
+        name: `${s.firstName} ${s.lastName}`,
+        specialty: s.specialty || s.role || 'Doctor',
+        facility: (s.facility as any)?.name || 'MediChain Hospital'
+      }))
+    : doctors;
 
   const availableDocs = (records?.documents && records.documents.length > 0)
     ? records.documents
@@ -381,7 +391,7 @@ export function ConsentManagement() {
                 className="w-full h-10 px-3 py-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="">-- Choose a doctor or facility --</option>
-                {doctors.map((doc) => (
+                {displayDoctors.map((doc) => (
                   <option key={doc.did} value={doc.did}>
                     {doc.name} ({doc.specialty} — {doc.facility})
                   </option>

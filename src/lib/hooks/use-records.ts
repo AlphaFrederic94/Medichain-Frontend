@@ -287,4 +287,49 @@ export function useRevokeConsent() {
   });
 }
 
+export function useAdminPrescriptions() {
+  const isAuthenticated = useAppStore((s) => s.isAuthenticated);
+  return useQuery({
+    queryKey: ['admin', 'prescriptions'],
+    queryFn: () => api.get<any[]>('/records/admin/prescriptions'),
+    enabled: isAuthenticated,
+  });
+}
+
+export function useAdminDiagnoses() {
+  const isAuthenticated = useAppStore((s) => s.isAuthenticated);
+  return useQuery({
+    queryKey: ['admin', 'diagnoses'],
+    queryFn: () => api.get<any[]>('/records/admin/diagnoses'),
+    enabled: isAuthenticated,
+  });
+}
+
+export function useAllBlockchainLogs() {
+  const isAuthenticated = useAppStore((s) => s.isAuthenticated);
+  return useQuery({
+    queryKey: ['blockchain', 'logs'],
+    queryFn: () => api.get<any[]>('/blockchain/logs'),
+    enabled: isAuthenticated,
+  });
+}
+
+export function useAllBlocks() {
+  const isAuthenticated = useAppStore((s) => s.isAuthenticated);
+  return useQuery({
+    queryKey: ['blockchain', 'blocks'],
+    queryFn: () => api.get<any[]>('/blockchain/blocks'),
+    enabled: isAuthenticated,
+  });
+}
+
+export function useValidateChain() {
+  const isAuthenticated = useAppStore((s) => s.isAuthenticated);
+  return useQuery({
+    queryKey: ['blockchain', 'validate'],
+    queryFn: () => api.get<any>('/blockchain/validate'),
+    enabled: isAuthenticated,
+  });
+}
+
 

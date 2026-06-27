@@ -54,7 +54,18 @@
 :root {
   --radius: 0.625rem;
 
-  /* AfriHealth Foundation Palette — warm terracotta primary */
+  /* ==========================================================================
+     MEDICHAIN COLOR REFERENCES & COMPONENT USAGE GUIDE
+     ========================================================================== */
+
+  /* ── Brand / Core Palette ──────────────────────────────────────────────────
+   * --terra: Warm terracotta primary brand color. Used for main CTA buttons,
+   *          active navigation links, chain badges, and primary branding highlights.
+   * --emerald-accent: Vibrant healthcare emerald green. Used for success states,
+   *                   blockchain verified badges, active consent pills, treatment boxes.
+   * --amber-warm: Warm alert/warning amber. Used for pending consents, vital alerts,
+   *               caution callout banners, and warning indicators.
+   */
   --terra: oklch(0.535 0.115 30);
   --terra-foreground: oklch(0.985 0.002 80);
   --emerald-accent: oklch(0.488 0.14 165);
@@ -62,7 +73,17 @@
   --amber-warm: oklch(0.75 0.15 70);
   --amber-warm-foreground: oklch(0.205 0.02 70);
 
-  /* Semantic tokens */
+  /* ── Structural / Layout Semantic Tokens ───────────────────────────────────
+   * --background: Application body background color (light warm off-white).
+   * --foreground: Main text color for all typography and body text.
+   * --card: Background color for dashboard cards, panels, and containers.
+   * --popover: Background for dropdown menus, dialog modals, and tooltips.
+   * --primary: Primary UI interactive accent (mapped to --terra).
+   * --secondary: Background for subtle badges, secondary buttons, input wrappers.
+   * --muted: Background for inactive elements, subtle dividers, empty state skeletons.
+   * --destructive: Red alert color for errors, revoke actions, delete buttons.
+   * --border: Standard border color for table rows, cards, and input boundaries.
+   */
   --background: oklch(0.985 0.002 80);
   --foreground: oklch(0.175 0.015 30);
   --card: oklch(0.995 0.001 80);
@@ -81,12 +102,20 @@
   --border: oklch(0.908 0.015 80);
   --input: oklch(0.908 0.015 80);
   --ring: oklch(0.535 0.115 30);
+
+  /* ── Data Visualization / Chart Tokens ─────────────────────────────────────
+   * --chart-1 to 5: Used in Recharts visualizations (Vitals chart, Analytics graphs).
+   */
   --chart-1: oklch(0.535 0.115 30);
   --chart-2: oklch(0.488 0.14 165);
   --chart-3: oklch(0.75 0.15 70);
   --chart-4: oklch(0.58 0.12 340);
   --chart-5: oklch(0.55 0.1 250);
 
+  /* ── Sidebar Navigation Palette ────────────────────────────────────────────
+   * --sidebar: Left navigation panel background.
+   * --sidebar-accent: Background hover state for navigation items.
+   */
   --sidebar: oklch(0.97 0.01 80);
   --sidebar-foreground: oklch(0.175 0.015 30);
   --sidebar-primary: oklch(0.535 0.115 30);

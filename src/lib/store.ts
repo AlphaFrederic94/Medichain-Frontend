@@ -20,7 +20,11 @@ export type Page =
   | 'doctor-facility'
   | 'doctor-audit-log'
   | 'doctor-settings'
-  | 'admin-dashboard';
+  | 'admin-dashboard'
+  | 'admin-patients'
+  | 'admin-doctors'
+  | 'admin-records'
+  | 'admin-blockchain';
 
 // Map backend roles to frontend role categories
 export function mapRole(backendRole: BackendRole): Role {

@@ -18,6 +18,8 @@ import {
   HelpCircle,
   ChevronsLeft,
   ChevronsRight,
+  Stethoscope,
+  Activity,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -67,6 +69,10 @@ const DOCTOR_NAV: NavItem[] = [
 
 const ADMIN_NAV: NavItem[] = [
   { label: 'Dashboard', icon: LayoutDashboard, page: 'admin-dashboard' },
+  { label: 'Patients & Assign', icon: Users, page: 'admin-patients' },
+  { label: 'Doctors & Staff', icon: Stethoscope, page: 'admin-doctors' },
+  { label: 'Clinical Records', icon: FileText, page: 'admin-records' },
+  { label: 'Blockchain Logs', icon: Activity, page: 'admin-blockchain' },
 ];
 
 function getNavItems(role: Role): NavItem[] {

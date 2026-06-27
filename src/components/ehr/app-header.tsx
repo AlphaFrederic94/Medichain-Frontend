@@ -27,6 +27,10 @@ const PAGE_TITLES: Record<Page, string> = {
   'doctor-audit-log': 'Audit Log',
   'doctor-settings': 'Settings',
   'admin-dashboard': 'Dashboard',
+  'admin-patients': 'Patients & Assignment',
+  'admin-doctors': 'Doctors & Staff',
+  'admin-records': 'Clinical Records Overview',
+  'admin-blockchain': 'Blockchain Supervision & Logs',
 };
 
 // ── Helpers ────────────────────────────────────────────────────

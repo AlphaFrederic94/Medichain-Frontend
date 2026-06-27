@@ -11,6 +11,10 @@ import { DoctorDashboard } from '@/components/ehr/doctor-dashboard';
 import { NewVisitForm } from '@/components/ehr/new-visit-form';
 import { ConsentManagement } from '@/components/ehr/consent-management';
 import { AdminDashboard } from '@/components/ehr/admin-dashboard';
+import { AdminPatients } from '@/components/ehr/admin-patients';
+import { AdminDoctors } from '@/components/ehr/admin-doctors';
+import { AdminRecords } from '@/components/ehr/admin-records';
+import { AdminBlockchain } from '@/components/ehr/admin-blockchain';
 import { PatientPrescriptions } from '@/components/ehr/patient-prescriptions';
 import { PatientDocuments } from '@/components/ehr/patient-documents';
 import { PatientSettings } from '@/components/ehr/patient-settings';
@@ -62,6 +66,14 @@ function PageContent() {
     /* Admin pages */
     case 'admin-dashboard':
       return <AdminDashboard />;
+    case 'admin-patients':
+      return <AdminPatients />;
+    case 'admin-doctors':
+      return <AdminDoctors />;
+    case 'admin-records':
+      return <AdminRecords />;
+    case 'admin-blockchain':
+      return <AdminBlockchain />;
 
     default:
       return <PatientDashboard />;

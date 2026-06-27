@@ -169,3 +169,24 @@ export function useUpdatePatientProfileByProvider() {
     },
   });
 }
+
+export function useAllPatients() {
+  const isAuthenticated = useAppStore((s) => s.isAuthenticated);
+  return useQuery({
+    queryKey: ['patient', 'all'],
+    queryFn: () => api.get<any[]>('/patients/all/list'),
+    enabled: isAuthenticated,
+  });
+}
+
+export function useAssignDoctor() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ did, assignedDoctorDid, assignedDoctorName }: { did: string; assignedDoctorDid: string; assignedDoctorName: string }) => {
+      return api.put<any>(`/patients/${did}/assign`, { assignedDoctorDid, assignedDoctorName });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['patient', 'all'] });
+    },
+  });
+}

@@ -66,6 +66,16 @@ export function useRegisterFacility() {
 }
 
 // ── Staff ────────────────────────────────────────────────────────
+export function useAllStaff() {
+  const isAuthenticated = useAppStore((s) => s.isAuthenticated);
+
+  return useQuery({
+    queryKey: ['provider', 'staff', 'all'],
+    queryFn: () => api.get<Staff[]>('/providers/staff'),
+    enabled: isAuthenticated,
+  });
+}
+
 export function useStaffByDid(did: string | null) {
   const isAuthenticated = useAppStore((s) => s.isAuthenticated);
 
